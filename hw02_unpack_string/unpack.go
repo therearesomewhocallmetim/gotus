@@ -1,7 +1,5 @@
 package hw02unpackstring
 
-// package main
-
 import (
 	"errors"
 	"strconv"
@@ -16,7 +14,7 @@ var (
 )
 
 func Unpack(str string) (string, error) {
-	canAcceptNumber := false
+	disallowNumber := true
 	result := []string{}
 	literalMode := false
 
@@ -32,7 +30,7 @@ func Unpack(str string) (string, error) {
 			}
 			result = append(result, grapheme)
 			literalMode = false
-			canAcceptNumber = true
+			disallowNumber = false
 			continue
 		}
 
@@ -42,16 +40,16 @@ func Unpack(str string) (string, error) {
 		}
 
 		if graphemeType.isNumber {
-			if !canAcceptNumber {
+			if disallowNumber {
 				return "", ErrInvalidString
 			}
 			result = multiplyTailBy(result, graphemeType.number)
-			canAcceptNumber = false
+			disallowNumber = true
 			continue
 		}
 
 		result = append(result, grapheme)
-		canAcceptNumber = true
+		disallowNumber = false
 	}
 
 	if literalMode {
