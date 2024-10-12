@@ -27,7 +27,7 @@ func Unpack(str string) (string, error) {
 		graphemeType := parseGrapheme(grapheme)
 
 		if literalMode {
-			if graphemeType.IsGrapheme {
+			if graphemeType.isGrapheme {
 				return "", ErrInvalidEscapeSequence
 			}
 			result = append(result, grapheme)
@@ -36,16 +36,16 @@ func Unpack(str string) (string, error) {
 			continue
 		}
 
-		if graphemeType.IsEscape {
+		if graphemeType.isEscape {
 			literalMode = true
 			continue
 		}
 
-		if graphemeType.IsNumber {
+		if graphemeType.isNumber {
 			if !canAcceptNumber {
 				return "", ErrInvalidString
 			}
-			result = multiplyTailBy(result, graphemeType.Number)
+			result = multiplyTailBy(result, graphemeType.number)
 			canAcceptNumber = false
 			continue
 		}
@@ -69,22 +69,20 @@ func multiplyTailBy(result []string, n int) []string {
 	return result
 }
 
-const Escape = `\`
-
-type GraphemeType struct {
-	IsNumber   bool
-	Number     int
-	IsGrapheme bool
-	IsEscape   bool
+type graphemeType struct {
+	isNumber   bool
+	number     int
+	isGrapheme bool
+	isEscape   bool
 }
 
-func parseGrapheme(grapheme string) GraphemeType {
+func parseGrapheme(grapheme string) graphemeType {
 	if grapheme == `\` {
-		return GraphemeType{IsEscape: true}
+		return graphemeType{isEscape: true}
 	}
 	n, err := strconv.Atoi(grapheme)
 	if err == nil {
-		return GraphemeType{IsNumber: true, Number: n}
+		return graphemeType{isNumber: true, number: n}
 	}
-	return GraphemeType{IsGrapheme: true}
+	return graphemeType{isGrapheme: true}
 }
