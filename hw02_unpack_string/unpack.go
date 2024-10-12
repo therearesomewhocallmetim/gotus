@@ -75,8 +75,7 @@ type GraphemeType struct {
 	IsNumber   bool
 	Number     int
 	IsGrapheme bool
-	// Grapheme   string
-	IsEscape bool
+	IsEscape   bool
 }
 
 func parseGrapheme(grapheme string) GraphemeType {
