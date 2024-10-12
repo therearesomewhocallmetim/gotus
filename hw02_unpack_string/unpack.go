@@ -2,10 +2,7 @@ package hw02unpackstring
 
 import (
 	"errors"
-	"strconv"
-	"strings"
-
-	"github.com/rivo/uniseg" //nolint:depguard
+	"unicode"
 )
 
 var (
@@ -15,17 +12,12 @@ var (
 
 func Unpack(str string) (string, error) {
 	disallowNumber := true
-	result := []string{}
+	result := []rune{}
 	literalMode := false
 
-	graphemes := uniseg.NewGraphemes(str)
-
-	for graphemes.Next() {
-		grapheme := graphemes.Str()
-		graphemeType := parseGrapheme(grapheme)
-
+	for _, grapheme := range str {
 		if literalMode {
-			if graphemeType.isGrapheme {
+			if unicode.IsLetter(grapheme) {
 				return "", ErrInvalidEscapeSequence
 			}
 			result = append(result, grapheme)
@@ -34,53 +26,39 @@ func Unpack(str string) (string, error) {
 			continue
 		}
 
-		if graphemeType.isEscape {
+		if grapheme == '\\' {
 			literalMode = true
 			continue
 		}
 
-		if graphemeType.isNumber {
+		if unicode.IsNumber(grapheme) {
 			if disallowNumber {
 				return "", ErrInvalidString
 			}
-			result = multiplyTailBy(result, graphemeType.number)
+			result = multiplyTailBy(result, int(grapheme-'0'))
 			disallowNumber = true
 			continue
 		}
 
-		result = append(result, grapheme)
-		disallowNumber = false
+		if unicode.IsLetter(grapheme) {
+			result = append(result, grapheme)
+			disallowNumber = false
+			continue
+		}
+		return "", ErrInvalidString
 	}
 
 	if literalMode {
 		return "", ErrInvalidEscapeSequence
 	}
-	return strings.Join(result, ""), nil
+	return string(result), nil
 }
 
-func multiplyTailBy(result []string, n int) []string {
-	var toAppend string
+func multiplyTailBy(result []rune, n int) []rune {
+	var toAppend rune
 	result, toAppend = result[:len(result)-1], result[len(result)-1]
 	for i := 0; i < n; i++ {
 		result = append(result, toAppend)
 	}
 	return result
-}
-
-type graphemeType struct {
-	isNumber   bool
-	number     int
-	isGrapheme bool
-	isEscape   bool
-}
-
-func parseGrapheme(grapheme string) graphemeType {
-	if grapheme == `\` {
-		return graphemeType{isEscape: true}
-	}
-	n, err := strconv.Atoi(grapheme)
-	if err == nil {
-		return graphemeType{isNumber: true, number: n}
-	}
-	return graphemeType{isGrapheme: true}
 }
