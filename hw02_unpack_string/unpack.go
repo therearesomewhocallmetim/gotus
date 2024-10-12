@@ -7,11 +7,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rivo/uniseg"
+	"github.com/rivo/uniseg" //nolint:depguard
 )
 
-var ErrInvalidString = errors.New("invalid string")
-var ErrInvalidEscapeSequence = errors.New("invalid escape sequence")
+var (
+	ErrInvalidString         = errors.New("invalid string")
+	ErrInvalidEscapeSequence = errors.New("invalid escape sequence")
+)
 
 func Unpack(str string) (string, error) {
 	canAcceptNumber := false
@@ -22,36 +24,36 @@ func Unpack(str string) (string, error) {
 
 	for graphemes.Next() {
 		grapheme := graphemes.Str()
-		if grapheme == "\\" {
-			if literalMode {
-				result = append(result, grapheme)
-				literalMode = false
-				continue
-			}
-			literalMode = true
-			continue
-		}
-		n, err := strconv.Atoi(grapheme)
-		if err != nil { // the grapheme is not a number
-			if literalMode {
+		graphemeType := parseGrapheme(grapheme)
+
+		if literalMode {
+			if graphemeType.IsGrapheme {
 				return "", ErrInvalidEscapeSequence
 			}
 			result = append(result, grapheme)
+			literalMode = false
 			canAcceptNumber = true
 			continue
 		}
-		if !canAcceptNumber {
-			return "", ErrInvalidString
-		}
-		if literalMode {
-			result = append(result, grapheme)
-			literalMode = false
+
+		if graphemeType.IsEscape {
+			literalMode = true
 			continue
 		}
-		result = multiplyTailBy(result, n)
-		canAcceptNumber = false
 
+		if graphemeType.IsNumber {
+			if !canAcceptNumber {
+				return "", ErrInvalidString
+			}
+			result = multiplyTailBy(result, graphemeType.Number)
+			canAcceptNumber = false
+			continue
+		}
+
+		result = append(result, grapheme)
+		canAcceptNumber = true
 	}
+
 	if literalMode {
 		return "", ErrInvalidEscapeSequence
 	}
@@ -65,4 +67,25 @@ func multiplyTailBy(result []string, n int) []string {
 		result = append(result, toAppend)
 	}
 	return result
+}
+
+const Escape = `\`
+
+type GraphemeType struct {
+	IsNumber   bool
+	Number     int
+	IsGrapheme bool
+	// Grapheme   string
+	IsEscape bool
+}
+
+func parseGrapheme(grapheme string) GraphemeType {
+	if grapheme == `\` {
+		return GraphemeType{IsEscape: true}
+	}
+	n, err := strconv.Atoi(grapheme)
+	if err == nil {
+		return GraphemeType{IsNumber: true, Number: n}
+	}
+	return GraphemeType{IsGrapheme: true}
 }
