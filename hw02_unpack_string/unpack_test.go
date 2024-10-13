@@ -22,6 +22,8 @@ func TestUnpack(t *testing.T) {
 		{input: `qwe\\5`, expected: `qwe\\\\\`},
 		{input: `qwe\\\3`, expected: `qwe\3`},
 		{input: `qwe3\3`, expected: `qweee3`},
+		{input: `qw,3\3`, expected: `qw,,,3`},
+		{input: `qw 3\3`, expected: `qw   3`},
 	}
 
 	for _, tc := range tests {
@@ -35,7 +37,12 @@ func TestUnpack(t *testing.T) {
 }
 
 func TestUnpackInvalidString(t *testing.T) {
-	invalidStrings := []string{"3abc", "45", "aaa10b", "d̷̙͈̙̓͛̇ͨ̾̐4   i̧̻̪͍͒ͬ͆̀̒͝      a̷̯̞̻ͤ͏͙͙̜͘     c̨̭͚̼̙̍ͨ͌̚͝      r̨͇̯̱̍͋ͧͩ̕͜    i̭͍̘̞̣̱̐͛͜͟     t̢͇̙̯ͭ̐̇̽ͥ̈    三ï̴̮̺̜̙̪͉̩̮    c̰̞͍͖̪̣ͮ̂̚͝     ì̧̙̤́͂̽̑̚͡    s̗͕̘̩̯̎́̚̕͟      ṁ̫̩̭̊͐ͪ́̈͢   "} //nolint:lll
+	invalidStrings := []string{
+		"3abc",
+		"45",
+		"aaa10b",
+		"d̷̙͈̙̓͛̇ͨ̾̐4   i̧̻̪͍͒ͬ͆̀̒͝      a̷̯̞̻ͤ͏͙͙̜͘     c̨̭͚̼̙̍ͨ͌̚͝      r̨͇̯̱̍͋ͧͩ̕͜    i̭͍̘̞̣̱̐͛͜͟     t̢͇̙̯ͭ̐̇̽ͥ̈    三ï̴̮̺̜̙̪͉̩̮    c̰̞͍͖̪̣ͮ̂̚͝     ì̧̙̤́͂̽̑̚͡    s̗͕̘̩̯̎́̚̕͟      ṁ̫̩̭̊͐ͪ́̈͢   ", //nolint:lll
+	}
 	for _, tc := range invalidStrings {
 		tc := tc
 		t.Run(tc, func(t *testing.T) {
@@ -46,7 +53,7 @@ func TestUnpackInvalidString(t *testing.T) {
 }
 
 func TestUnpackInvalidEscapeSequence(t *testing.T) {
-	invalidStrings := []string{`\`, `hello\d`}
+	invalidStrings := []string{`\`, `hello\d`, `ab\,`}
 	for _, tc := range invalidStrings {
 		tc := tc
 		t.Run(tc, func(t *testing.T) {

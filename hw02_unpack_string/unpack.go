@@ -17,7 +17,7 @@ func Unpack(str string) (string, error) {
 
 	for _, grapheme := range str {
 		if literalMode {
-			if unicode.IsLetter(grapheme) {
+			if !unicode.IsDigit(grapheme) && grapheme != '\\' {
 				return "", ErrInvalidEscapeSequence
 			}
 			result = append(result, grapheme)
@@ -40,7 +40,7 @@ func Unpack(str string) (string, error) {
 			continue
 		}
 
-		if unicode.IsLetter(grapheme) {
+		if isAllowedChar(grapheme) {
 			result = append(result, grapheme)
 			disallowNumber = false
 			continue
@@ -61,4 +61,9 @@ func multiplyTailBy(result []rune, n int) []rune {
 		result = append(result, toAppend)
 	}
 	return result
+}
+
+func isAllowedChar(grapheme rune) bool {
+	allowedRanges := []*unicode.RangeTable{unicode.Letter, unicode.Space, unicode.Punct}
+	return unicode.IsOneOf(allowedRanges, grapheme)
 }
