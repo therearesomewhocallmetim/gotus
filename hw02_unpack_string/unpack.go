@@ -2,11 +2,68 @@ package hw02unpackstring
 
 import (
 	"errors"
+	"unicode"
 )
 
-var ErrInvalidString = errors.New("invalid string")
+var (
+	ErrInvalidString         = errors.New("invalid string")
+	ErrInvalidEscapeSequence = errors.New("invalid escape sequence")
+)
 
-func Unpack(_ string) (string, error) {
-	// Place your code here.
-	return "", nil
+func Unpack(str string) (string, error) {
+	disallowNumber := true
+	result := []rune{}
+	literalMode := false
+
+	for _, grapheme := range str {
+		if literalMode {
+			if !unicode.IsDigit(grapheme) && grapheme != '\\' {
+				return "", ErrInvalidEscapeSequence
+			}
+			result = append(result, grapheme)
+			literalMode = false
+			disallowNumber = false
+			continue
+		}
+
+		if grapheme == '\\' {
+			literalMode = true
+			continue
+		}
+
+		if unicode.IsNumber(grapheme) {
+			if disallowNumber {
+				return "", ErrInvalidString
+			}
+			result = multiplyTailBy(result, int(grapheme-'0'))
+			disallowNumber = true
+			continue
+		}
+
+		if isAllowedChar(grapheme) {
+			result = append(result, grapheme)
+			disallowNumber = false
+			continue
+		}
+		return "", ErrInvalidString
+	}
+
+	if literalMode {
+		return "", ErrInvalidEscapeSequence
+	}
+	return string(result), nil
+}
+
+func multiplyTailBy(result []rune, n int) []rune {
+	var toAppend rune
+	result, toAppend = result[:len(result)-1], result[len(result)-1]
+	for i := 0; i < n; i++ {
+		result = append(result, toAppend)
+	}
+	return result
+}
+
+func isAllowedChar(grapheme rune) bool {
+	allowedRanges := []*unicode.RangeTable{unicode.Letter, unicode.Space, unicode.Punct}
+	return unicode.IsOneOf(allowedRanges, grapheme)
 }
