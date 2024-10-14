@@ -1,7 +1,6 @@
 package hw03frequencyanalysis
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 )
@@ -43,7 +42,6 @@ func Top10(str string) []string {
 	result := make([]string, 0, 10)
 
 	for x, wc := range wordCounts {
-		fmt.Printf("%s - %d\n", wc.word, wc.count)
 		result = append(result, wc.word)
 		if x == 9 {
 			break
